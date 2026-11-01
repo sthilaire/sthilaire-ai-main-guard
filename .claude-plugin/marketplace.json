@@ -1,0 +1,15 @@
+{
+  "name": "sthilaire-ai-main-guard",
+  "description": "Tim St. Hilaire (W.P. Hill Tech) plugins: an opinionated main-branch guard for AI coding agents.",
+  "owner": {
+    "name": "Tim St. Hilaire",
+    "url": "https://wphilltech.com"
+  },
+  "plugins": [
+    {
+      "name": "sthilaire-ai-main-guard",
+      "source": "./",
+      "description": "Blocks Claude from committing or pushing to main; installs matching git hooks per repo."
+    }
+  ]
+}

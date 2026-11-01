@@ -1,96 +1,112 @@
-# protecting-main-branch
+# sthilaire-ai-main-guard
 
 Source: https://github.com/sthilaire/protecting-main-branch
 
-Stop accidental commits and pushes straight to `main` — two small, independent
-layers you can drop into any git repo in one command.
+## Why this exists
 
-1. **Claude Code hook** — if you use [Claude Code](https://claude.com/claude-code),
-   blocks `git commit`/`git push` run through its Bash tool while on `main`.
-2. **Real git hooks** (`pre-commit` + `pre-push`) — blocks the same for every
-   git client: your terminal, your editor, CI, anything.
+An AI agent in your terminal uses your git credentials. It will commit and push
+to `main` as readily as you would — faster, and without the pause where you
+think "wait, wrong branch." This is my process for keeping `main` reviewable in
+that world: the agent works on a branch, and everything reaches `main` through
+an MR/PR. It's opinionated on purpose. Background:
 
-Neither is a hard security boundary. The Claude Code hook only governs that
-one tool, and git hooks are bypassable with `--no-verify` by design (that's
-intentional — see [Limitations](#limitations)). Think of this as a guardrail
-against mistakes, not a permissions system. For real enforcement, use your
-git host's server-side branch protection (GitHub/GitLab settings).
+- [Claude Code main branch protection](https://wphilltech.com/claude-code-main-branch-protection/)
+- [Git hooks for branch protection](https://wphilltech.com/git-hooks-branch-protection/)
 
-## Quick start
+## Two layers
 
-Clone this repo, then run its script from inside the project you want to protect:
+1. **Claude layer — a Claude Code plugin hook.** Denies `git commit` / `git push`
+   run through Claude's Bash tool while the repo is on its protected branch.
+   It runs from the plugin, so there's one copy on your machine, not one per repo.
+2. **Git layer — `pre-commit` + `pre-push` hooks in each repo.** Blocks the same
+   for every git client: terminal, editor, CI. Git can't read plugin files, so
+   this layer lives in the repo.
+
+Both read the branch name from `.githooks/protected-branch` (one line,
+committed). The plugin hook acts **only in repos that have that file** — it
+won't touch scratch repos or other people's clones.
+
+## Install
+
+**1. The plugin** (once per machine), inside Claude Code:
+
+```
+/plugin marketplace add sthilaire/protecting-main-branch
+/plugin install sthilaire-ai-main-guard@sthilaire-ai-main-guard
+```
+
+On Claude Code 2.1.275+ that's one step:
+`/plugin install sthilaire-ai-main-guard --marketplace sthilaire/protecting-main-branch`
+
+Then restart Claude Code — hooks load at session start.
+
+**2. The git layer** (once per repo). Ask Claude to "protect main" and the
+plugin's skill runs the installer, or run it yourself from inside the repo:
 
 ```bash
 git clone https://github.com/sthilaire/protecting-main-branch.git /tmp/protecting-main-branch
-/tmp/protecting-main-branch/scripts/setup-branch-protection.sh
+bash /tmp/protecting-main-branch/skills/sthilaire-ai-main-guard/scripts/install.sh          # main
+bash /tmp/protecting-main-branch/skills/sthilaire-ai-main-guard/scripts/install.sh trunk    # another branch
 ```
 
-That's it. It protects `main` by default. To protect a different branch name:
+It writes:
+
+```
+.githooks/protected-branch   # the branch name (this is also the plugin's opt-in)
+.githooks/pre-commit         # rejects a commit while on the protected branch
+.githooks/pre-push           # rejects a push targeting the protected branch
+CLAUDE.md                    # one-line pointer between markers (only if CLAUDE.md exists)
+```
+
+and runs `git config core.hooksPath .githooks`. Re-running is safe. It stops
+with `ABORT` rather than overwrite a hook it didn't write, and prints `MANUAL`
+when something needs a human.
+
+`install.sh --check` self-tests the installer and the plugin hook in a
+throwaway repo.
+
+### Upgrading from the old per-repo setup
+
+Earlier versions copied a Claude hook into each project
+(`.claude/hooks/block-main-git.sh`). With the plugin installed, that copy makes
+every block fire twice. From inside each such project:
 
 ```bash
-/tmp/protecting-main-branch/scripts/setup-branch-protection.sh trunk
+bash /tmp/protecting-main-branch/skills/sthilaire-ai-main-guard/scripts/install.sh --migrate
 ```
 
-The script is idempotent — safe to re-run, and it won't duplicate anything
-or clobber existing `.claude/settings.json` hooks.
+It removes the old hook and its `.claude/settings.json` entry (other settings
+are kept), rewrites the git hooks to read the branch at runtime, and shrinks
+the old CLAUDE.md sections to the pointer. It only removes files that match a
+version this repo generated; a locally edited hook is reported as `MANUAL`.
 
-### What it creates in your project
-
-```
-.claude/hooks/block-main-git.sh   # Claude Code hook script
-.claude/settings.json             # wires the hook in (merged, not overwritten)
-.githooks/pre-commit              # rejects a commit while on the protected branch
-.githooks/pre-push                # rejects a push targeting the protected branch
-CLAUDE.md                         # notes on both mechanisms (created or appended to)
-```
-
-It also runs `git config core.hooksPath .githooks` for you, in the current
-clone only (see below).
+`scripts/setup-branch-protection.sh` still works, but is deprecated: it prints
+the plugin instructions, then runs the installer above.
 
 ## The one manual step
 
-`core.hooksPath` is git config, not a tracked file — git deliberately
-doesn't let a repo silently enable hooks for everyone who clones it. That
-means:
-
-- The clone you ran the script in is protected immediately.
-- Every **other** clone (a teammate's machine, a CI runner, a fresh checkout)
-  needs the same one-time command, run from inside that clone:
-
-  ```bash
-  git config core.hooksPath .githooks
-  ```
-
-  (or just re-run `setup-branch-protection.sh` there — it's idempotent).
-
-## Using it as a Claude Code skill
-
-This repo doubles as a [Claude Code](https://claude.com/claude-code) skill.
-Clone it directly into your skills directory and Claude will pick it up:
+`core.hooksPath` is git config, not a tracked file — git deliberately doesn't
+let a repo silently enable hooks for everyone who clones it. Every **other**
+clone (a teammate, a CI runner, a fresh checkout) needs, once:
 
 ```bash
-git clone https://github.com/sthilaire/protecting-main-branch.git ~/.claude/skills/protecting-main-branch
+git config core.hooksPath .githooks
 ```
-
-Claude will then reach for it whenever you ask to protect `main`, block
-direct commits, or set up branch protection — see `SKILL.md` for the full
-trigger description.
 
 ## Limitations
 
-- **The Claude Code hook only covers Claude Code's Bash tool.** A plain
-  terminal `git push` from the same machine isn't touched by it.
-- **`--no-verify` bypasses both git hooks by design.** Git hooks are a
-  local convention, not a security boundary — anyone with a checkout can
-  disable them. If you need guarantees regardless of the developer's local
-  setup, use server-side branch protection on your git host instead.
-- **`.claude/settings.json` changes need a reload.** Run `/hooks` inside
-  Claude Code (or start a fresh session) to activate a newly added or
-  edited hook — the config watcher only tracks directories that existed
-  when the session started.
-- Fast-forward merges and `git reset --hard` skip `pre-commit` (no new
-  commit object is created), but `pre-push` still catches them before
-  anything leaves the machine.
+- **The Claude layer only covers Claude Code's Bash tool.** A plain terminal
+  `git push` isn't touched by it, and neither are other AI tools.
+- **`--no-verify` bypasses both git hooks by design.** Git hooks are a local
+  convention, not a security boundary. For guarantees regardless of local
+  setup, use server-side branch protection on GitHub/GitLab.
+- **Hooks load at session start.** After installing or updating the plugin,
+  restart Claude Code.
+- **The plugin hook matches `git commit` / `git push` at the start of a
+  command.** Forms like `git -C dir commit` slip past it; the git hooks still
+  catch them.
+- Fast-forward merges and `git reset --hard` skip `pre-commit` (no new commit
+  object), but `pre-push` still catches them before anything leaves the machine.
 
 ## License
 
