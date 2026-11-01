@@ -1,6 +1,6 @@
 # sthilaire-ai-main-guard
 
-Source: https://github.com/sthilaire/protecting-main-branch
+Source: https://github.com/sthilaire/sthilaire-ai-main-guard
 
 ## Why this exists
 
@@ -31,12 +31,12 @@ won't touch scratch repos or other people's clones.
 **1. The plugin** (once per machine), inside Claude Code:
 
 ```
-/plugin marketplace add sthilaire/protecting-main-branch
+/plugin marketplace add sthilaire/sthilaire-ai-main-guard
 /plugin install sthilaire-ai-main-guard@sthilaire-ai-main-guard
 ```
 
 On Claude Code 2.1.275+ that's one step:
-`/plugin install sthilaire-ai-main-guard --marketplace sthilaire/protecting-main-branch`
+`/plugin install sthilaire-ai-main-guard --marketplace sthilaire/sthilaire-ai-main-guard`
 
 Then restart Claude Code — hooks load at session start.
 
@@ -44,9 +44,9 @@ Then restart Claude Code — hooks load at session start.
 plugin's skill runs the installer, or run it yourself from inside the repo:
 
 ```bash
-git clone https://github.com/sthilaire/protecting-main-branch.git /tmp/protecting-main-branch
-bash /tmp/protecting-main-branch/skills/sthilaire-ai-main-guard/scripts/install.sh          # main
-bash /tmp/protecting-main-branch/skills/sthilaire-ai-main-guard/scripts/install.sh trunk    # another branch
+git clone https://github.com/sthilaire/sthilaire-ai-main-guard.git /tmp/sthilaire-ai-main-guard
+bash /tmp/sthilaire-ai-main-guard/skills/sthilaire-ai-main-guard/scripts/install.sh          # main
+bash /tmp/sthilaire-ai-main-guard/skills/sthilaire-ai-main-guard/scripts/install.sh trunk    # another branch
 ```
 
 It writes:
@@ -72,7 +72,7 @@ Earlier versions copied a Claude hook into each project
 every block fire twice. From inside each such project:
 
 ```bash
-bash /tmp/protecting-main-branch/skills/sthilaire-ai-main-guard/scripts/install.sh --migrate
+bash /tmp/sthilaire-ai-main-guard/skills/sthilaire-ai-main-guard/scripts/install.sh --migrate
 ```
 
 It removes the old hook and its `.claude/settings.json` entry (other settings

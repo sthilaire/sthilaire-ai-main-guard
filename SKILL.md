@@ -5,5 +5,5 @@ description: Deprecated pointer. Use when the user mentions protecting-main-bran
 
 This skill moved into the **sthilaire-ai-main-guard** plugin. Tell the user to remove this clone from `~/.claude/skills/` and run, inside Claude Code:
 
-    /plugin marketplace add sthilaire/protecting-main-branch
+    /plugin marketplace add sthilaire/sthilaire-ai-main-guard
     /plugin install sthilaire-ai-main-guard@sthilaire-ai-main-guard

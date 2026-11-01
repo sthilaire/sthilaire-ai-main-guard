@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Tim St. Hilaire's opinionated main-branch guard for the age of AI agents: blocks Claude from committing or pushing to main, plus git hooks for every other client.",
   "author": { "name": "Tim St. Hilaire", "url": "https://wphilltech.com" },
-  "homepage": "https://github.com/sthilaire/protecting-main-branch",
-  "repository": "https://github.com/sthilaire/protecting-main-branch",
+  "homepage": "https://github.com/sthilaire/sthilaire-ai-main-guard",
+  "repository": "https://github.com/sthilaire/sthilaire-ai-main-guard",
   "license": "MIT",
   "keywords": ["git", "branch-protection", "hooks", "safety"]
 }

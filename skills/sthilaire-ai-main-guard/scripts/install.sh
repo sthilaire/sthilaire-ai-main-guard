@@ -7,7 +7,7 @@
 set -euo pipefail
 
 NAME=sthilaire-ai-main-guard
-URL=https://github.com/sthilaire/protecting-main-branch#readme
+URL=https://github.com/sthilaire/sthilaire-ai-main-guard#readme
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 HOOK="$HERE/../../../hooks/block-main-git.sh"
 command -v jq >/dev/null || { echo "jq is required" >&2; exit 1; }
